@@ -5,7 +5,7 @@ imgsDir = './images'
 if not os.path.exists(imgsDir):
     os.makedirs(imgsDir)
 
-imgType = 1
+imgType = 3
 imgsNum = 100
 
 cap = cv2.VideoCapture(0)
