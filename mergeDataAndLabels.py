@@ -36,7 +36,8 @@ for imgDir in os.listdir(imgsDir):
 
                     xList.append(x)
                     yList.append(y)
-
+    # roduce the same set of relative coordinates even if it is shifted within the image
+    # preprocessing step to make the data more invariant to translation
                 for i in range(len(handCordinates.landmark)):
                     x = handCordinates.landmark[i].x
                     y = handCordinates.landmark[i].y
