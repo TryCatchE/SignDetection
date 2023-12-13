@@ -1,11 +1,17 @@
 import pickle
-
 import cv2
 import mediapipe as mp
 import numpy as np
+import pyttsx3
+import threading
 
+# Load the saved model
 modelDir = pickle.load(open('./model.p', 'rb'))
 model = modelDir['model']
+
+# Initialize Text-to-Speech engine
+engine = pyttsx3.init()
+engine_busy = False  # Flag to track if the engine is currently speaking
 
 cap = cv2.VideoCapture(0)
 
@@ -16,8 +22,16 @@ styleUtls = mp.solutions.drawing_styles
 handsObj = hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
 labels = {0: 'A', 1: 'L', 2: 'B'}
-while True:
 
+def speak_label(label):
+    global engine_busy
+    if not engine_busy:
+        engine_busy = True
+        engine.say(f'The predicted label is {label}')
+        engine.runAndWait()
+        engine_busy = False
+
+while True:
     handEdges = []
     xList = []
     yList = []
@@ -66,9 +80,11 @@ while True:
         cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
                     cv2.LINE_AA)
 
+        # Speak out the prediction label in a separate thread
+        threading.Thread(target=speak_label, args=(predLabel,)).start()
+
     cv2.imshow('frame', frame)
     cv2.waitKey(1)
-
 
 cap.release()
 cv2.destroyAllWindows()
