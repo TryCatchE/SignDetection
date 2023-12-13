@@ -4,7 +4,6 @@ import mediapipe as mp
 import numpy as np
 import pyttsx3
 import threading
-from threading import Timer
 
 # Load the saved model
 modelDir = pickle.load(open('./model.p', 'rb'))
@@ -14,10 +13,6 @@ model = modelDir['model']
 engine = pyttsx3.init()
 engine_busy = False  # Flag to track if the engine is currently speaking
 
-# voices = engine.getProperty('voices')
-
-# Set the voice (you can choose a different index based on your preference)
-# engine.setProperty('voice', voices[1].id)
 cap = cv2.VideoCapture(0)
 
 hands = mp.solutions.hands
@@ -26,23 +21,15 @@ styleUtls = mp.solutions.drawing_styles
 
 handsObj = hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
-labels = {0: 'Sandy', 1: 'OTI', 2: 'KALITERO'}
-
-prev_pred_label = None  # Variable to store the previous prediction
-speech_timer = None  # Timer to control the speech delay
+labels = {0: 'SANDY', 1: 'TI', 2: 'KANEIS'}
 
 def speak_label(label):
     global engine_busy
     if not engine_busy:
         engine_busy = True
-        engine.say(f'The predicted label is {label}')
+        engine.say(label)
         engine.runAndWait()
         engine_busy = False
-
-def stop_speech():
-    global engine_busy
-    engine.stop()  # Stop the speech engine
-    engine_busy = False  # Reset the engine_busy flag
 
 while True:
     handEdges = []
@@ -93,18 +80,8 @@ while True:
         cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
                     cv2.LINE_AA)
 
-        # Check if the current prediction is different from the previous one
-        if predLabel != prev_pred_label:
-            # Cancel the previous timer if it exists
-            if speech_timer:
-                speech_timer.cancel()
-
-            # Schedule a new timer to start speech after 2 seconds
-            speech_timer = Timer(2.0, speak_label, args=(predLabel,))
-            speech_timer.start()
-
-        # Update the previous prediction
-        prev_pred_label = predLabel
+        # Speak out the prediction label in a separate thread
+        threading.Thread(target=speak_label, args=(predLabel,)).start()
 
     cv2.imshow('frame', frame)
     cv2.waitKey(1)
