@@ -23,6 +23,8 @@ handsObj = hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
 labels = {0: 'SANDY', 1: 'TI', 2: 'KANEIS'}
 
+prev_label = 0  # Variable to store the previous prediction label
+
 def speak_label(label):
     global engine_busy
     if not engine_busy:
@@ -80,8 +82,12 @@ while True:
         cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
                     cv2.LINE_AA)
 
-        # Speak out the prediction label in a separate thread
-        threading.Thread(target=speak_label, args=(predLabel,)).start()
+        # Check if the current label is different from the previous one
+        if predLabel != prev_label:
+            # Speak out the prediction label in a separate thread
+            threading.Thread(target=speak_label, args=(predLabel,)).start()
+            # Update the previous prediction label
+            prev_label = predLabel
 
     cv2.imshow('frame', frame)
     cv2.waitKey(1)
