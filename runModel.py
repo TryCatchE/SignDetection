@@ -73,21 +73,36 @@ while True:
 
         x2 = int(max(xList) * W) - 10
         y2 = int(max(yList) * H) - 10
+        
+        input_features = np.asarray(handEdges)
 
-        prediction = model.predict([np.asarray(handEdges)])
+        expected_num_features = 42  # The number of features your model expects
+        input_features = np.asarray(handEdges)
 
-        predLabel = labels[int(prediction[0])]
+        # Ensure input_features is a 2D array
+        if input_features.ndim == 1:
+            input_features = input_features.reshape(1, -1)
 
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 0), 4)
-        cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
-                    cv2.LINE_AA)
+        if input_features.shape[1] != expected_num_features:
+            print("Error: Incorrect number of features in input. Expected", expected_num_features, "but got", input_features.shape[1])
+        else:
+            prediction = model.predict(input_features)
+            predLabel = labels[int(prediction[0])]
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 0), 4)
+            cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
+                        cv2.LINE_AA)
+      
 
-        # Check if the current label is different from the previous one
-        if predLabel != prev_label:
-            # Speak out the prediction label in a separate thread
-            threading.Thread(target=speak_label, args=(predLabel,)).start()
-            # Update the previous prediction label
-            prev_label = predLabel
+        # cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 0), 4)
+        # cv2.putText(frame, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
+        #             cv2.LINE_AA)
+
+        # # Check if the current label is different from the previous one
+        # if predLabel != prev_label:
+        #     # Speak out the prediction label in a separate thread
+        #     threading.Thread(target=speak_label, args=(predLabel,)).start()
+        #     # Update the previous prediction label
+        #     prev_label = predLabel
 
     cv2.imshow('frame', frame)
     cv2.waitKey(1)
