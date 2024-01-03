@@ -27,7 +27,7 @@ styleUtls = mp.solutions.drawing_styles
 handsObj = hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.3)
 
 labels_single_hand =  {i: letter for i, letter in enumerate(string.ascii_uppercase)}  # Adjust labels as needed
-labels_double_hands = {0: 'open text', 1: 'speak'}  # Adjust labels as needed
+labels_double_hands = {0: 'open text', 1: 'clear',2:'speak'}  # Adjust labels as needed
 
 prev_label = None  # Variable to store the previous prediction label
 label_start_time = None  # Time when the current label was first detected
@@ -119,6 +119,9 @@ while True:
                 if int(prediction[0]) == 0:
                     display_black_box = True
                 elif int(prediction[0]) == 1:
+                    display_black_box = False
+                    # black_box_content = []
+                elif int(prediction[0]) == 2:
                     if black_box_content:
                         threading.Thread(target=speak_label, args=(black_box_content,)).start()
 
@@ -127,7 +130,7 @@ while True:
     # Display the black box with stored predictions
     if display_black_box:
         cv2.rectangle(frame, (10, 10), (500, 100), (0, 0, 0), -1)  # Adjust size and position as needed
-        cv2.putText(frame, black_box_content, (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(frame, "te", (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow('Hand Recognition', frame)
 

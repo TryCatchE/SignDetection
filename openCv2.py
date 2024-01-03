@@ -5,8 +5,8 @@ imgsDir = './doubleHands'
 if not os.path.exists(imgsDir):
     os.makedirs(imgsDir)
 
-imgType = 2
-imgsNum = 50
+imgType = 3
+imgsNum = 100
 
 cap = cv2.VideoCapture(0)
 
