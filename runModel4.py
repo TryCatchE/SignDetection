@@ -5,6 +5,7 @@ import numpy as np
 import pyttsx3
 import threading
 import string
+import time
 
 # Load the saved models
 model_single_hand_dir = pickle.load(open('./model.p', 'rb'))  # Adjust path as needed
@@ -29,6 +30,7 @@ labels_single_hand =  {i: letter for i, letter in enumerate(string.ascii_upperca
 labels_double_hands = {0: 'FUGAAAAA', 1: 'FUGAAAAA', 2: 'FUGAAAAA'}  # Adjust labels as needed
 
 prev_label = None  # Variable to store the previous prediction label
+label_start_time = None  # Time when the current label was first detected
 
 def speak_label(label):
     global engine_busy
@@ -58,9 +60,9 @@ while True:
     if num_hands > 0:
         for handCordinates in results.multi_hand_landmarks:
             drawUtls.draw_landmarks(
-                frame,  # image to draw
-                handCordinates,  # model output
-                hands.HAND_CONNECTIONS,  # hand connections
+                frame,
+                handCordinates,
+                hands.HAND_CONNECTIONS,
                 styleUtls.get_default_hand_landmarks_style(),
                 styleUtls.get_default_hand_connections_style())
 
@@ -76,7 +78,6 @@ while True:
                 handEdges.append(x - min(xList))
                 handEdges.append(y - min(yList))
 
-        # Choose the model and labels based on the number of hands
         if num_hands == 1:
             model = model_single_hand
             labels = labels_single_hand
@@ -86,7 +87,6 @@ while True:
             labels = labels_double_hands
             expected_num_features = 84  # Adjust as per your double hands model
 
-        # Trim or pad the handEdges to ensure it has the expected number of features
         if len(handEdges) > expected_num_features:
             handEdges = handEdges[:expected_num_features]
         elif len(handEdges) < expected_num_features:
@@ -95,15 +95,19 @@ while True:
         input_features = np.asarray(handEdges).reshape(1, -1)
         prediction = model.predict(input_features)
         predLabel = labels[int(prediction[0])]
-        
+
         x1, y1 = int(min(xList) * W), int(min(yList) * H)
         x2, y2 = int(max(xList) * W), int(max(yList) * H)
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
         if predLabel != prev_label:
-            threading.Thread(target=speak_label, args=(predLabel,)).start()
             prev_label = predLabel
+            label_start_time = time.time()
+        elif label_start_time and (time.time() - label_start_time) >= 1.5:
+            # Only display and speak the label if it has been consistent for 1.5 seconds
+            cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            if not engine_busy:
+                threading.Thread(target=speak_label, args=(predLabel,)).start()
 
     cv2.imshow('Hand Recognition', frame)
 
