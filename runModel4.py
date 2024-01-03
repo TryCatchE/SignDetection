@@ -120,7 +120,8 @@ while True:
                     display_black_box = True
                 elif int(prediction[0]) == 1:
                     display_black_box = False
-                    # black_box_content = []
+                    black_box_content=''
+                    stored_predictions.clear()
                 elif int(prediction[0]) == 2:
                     if black_box_content:
                         threading.Thread(target=speak_label, args=(black_box_content,)).start()
@@ -130,7 +131,7 @@ while True:
     # Display the black box with stored predictions
     if display_black_box:
         cv2.rectangle(frame, (10, 10), (500, 100), (0, 0, 0), -1)  # Adjust size and position as needed
-        cv2.putText(frame, "te", (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(frame, black_box_content, (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow('Hand Recognition', frame)
 
