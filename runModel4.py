@@ -4,6 +4,7 @@ import mediapipe as mp
 import numpy as np
 import pyttsx3
 import threading
+import string
 
 # Load the saved models
 model_single_hand_dir = pickle.load(open('./model.p', 'rb'))  # Adjust path as needed
@@ -24,8 +25,8 @@ styleUtls = mp.solutions.drawing_styles
 
 handsObj = hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.3)
 
-labels_single_hand = {0: 'Label1', 1: 'Label2', 2: 'Label3'}  # Adjust labels as needed
-labels_double_hands = {0: 'SANDY', 1: 'TI', 2: 'KANEIS'}  # Adjust labels as needed
+labels_single_hand =  {i: letter for i, letter in enumerate(string.ascii_uppercase)}  # Adjust labels as needed
+labels_double_hands = {0: 'FUGAAAAA', 1: 'FUGAAAAA', 2: 'FUGAAAAA'}  # Adjust labels as needed
 
 prev_label = None  # Variable to store the previous prediction label
 

@@ -7,9 +7,23 @@ import numpy as np
 
 
 dataDir = pickle.load(open('./data.pickle', 'rb'))
+data = dataDir['data']
 
+for i in range(len(data)):
+    if len(data[i]) != 42:
+        # Trim the list to the first 42 elements
+        data[i] = data[i][:42]
 
-data = np.asarray(dataDir['data'])
+# Now try converting to a NumPy array again
+try:
+    data_array = np.array(data)
+    print("Conversion successful.")
+except ValueError as e:
+    print("Error during conversion:", e)
+# Print out the first few lengths for debugging
+# exit()
+
+# data = np.asarray(dataDir['data'])
 labels = np.asarray(dataDir['labels'])
 
 
