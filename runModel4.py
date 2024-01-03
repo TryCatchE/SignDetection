@@ -27,10 +27,16 @@ styleUtls = mp.solutions.drawing_styles
 handsObj = hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.3)
 
 labels_single_hand =  {i: letter for i, letter in enumerate(string.ascii_uppercase)}  # Adjust labels as needed
-labels_double_hands = {0: 'FUGAAAAA', 1: 'FUGAAAAA', 2: 'FUGAAAAA'}  # Adjust labels as needed
+labels_double_hands = {0: 'open text', 1: 'speak'}  # Adjust labels as needed
 
 prev_label = None  # Variable to store the previous prediction label
 label_start_time = None  # Time when the current label was first detected
+stored_predictions = []  # Array to store predictions
+display_black_box = False  # Flag to control the display of the black box
+black_box_content = ""  # Content to display in the black box
+last_stored_prediction = None  # Variable to store the last stored prediction
+last_stored_time = None  # Time when the last prediction was stored
+store_interval = 1.5  # Interval in seconds to store new predictions
 
 def speak_label(label):
     global engine_busy
@@ -100,14 +106,32 @@ while True:
         x2, y2 = int(max(xList) * W), int(max(yList) * H)
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
+        if num_hands == 2:
+            if int(prediction[0]) == 0:
+                display_black_box = True
+            elif int(prediction[0]) == 1:
+                if black_box_content:
+                    threading.Thread(target=speak_label, args=(black_box_content,)).start()
+        elif num_hands == 1 and display_black_box:
+            current_time = time.time()
+            if (predLabel != last_stored_prediction or (last_stored_time is None or (current_time - last_stored_time) >= store_interval)):
+                stored_predictions.append(labels_single_hand[int(prediction[0])])
+                last_stored_prediction = predLabel
+                last_stored_time = current_time
+
         if predLabel != prev_label:
             prev_label = predLabel
             label_start_time = time.time()
         elif label_start_time and (time.time() - label_start_time) >= 1.5:
-            # Only display and speak the label if it has been consistent for 1.5 seconds
+            black_box_content = ' '.join(stored_predictions)
             cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            if not engine_busy:
-                threading.Thread(target=speak_label, args=(predLabel,)).start()
+            # if not engine_busy:
+                # threading.Thread(target=speak_label, args=(predLabel,)).start()
+
+    # Display the black box with stored predictions
+    if display_black_box:
+        cv2.rectangle(frame, (10, 10), (500, 100), (0, 0, 0), -1)  # Adjust size and position as needed
+        cv2.putText(frame, black_box_content, (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow('Hand Recognition', frame)
 
