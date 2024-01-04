@@ -39,12 +39,33 @@ last_stored_time = None  # Time when the last prediction was stored
 store_interval = 5  # Interval in seconds to store new predictions
 
 
-def speak_label(label):
+def speak_labels(labels):
     global engine_busy
     if not engine_busy:
         engine_busy = True
-        engine.say(label)
-        engine.runAndWait()
+
+        # Initialize an empty string to accumulate letters into words
+        word = ''
+        # Initialize a list to store complete words
+        words = []
+
+        for label in labels:
+            if label == '_':  # When an underscore is encountered, start a new word
+                if word:  # Add the accumulated word to the list if it's not empty
+                    words.append(word)
+                    word = ''  # Reset the word accumulator
+            else:
+                word += label  # Accumulate letters into a word
+
+        # Add the last accumulated word if it's not empty
+        if word:
+            words.append(word)
+
+        # Speak each word
+        for word in words:
+            engine.say(word)
+            engine.runAndWait()
+
         engine_busy = False
 
 while True:
@@ -126,8 +147,8 @@ while True:
                 elif int(prediction[0]) == 2:
                     if black_box_content:
                         # speak_content = ''.join(stored_predictions)
-                        print(black_box_content)
-                        threading.Thread(target=speak_label, args=(black_box_content,)).start()
+                        print(stored_predictions)
+                        threading.Thread(target=speak_labels, args=(stored_predictions,)).start()
 
         cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
@@ -137,14 +158,15 @@ while True:
         cv2.putText(frame, black_box_content, (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow('Hand Recognition', frame)
+    key = cv2.waitKey(1) & 0xFF  # Store the pressed key in a variable
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        if stored_predictions:  # Check if the array is not empty
-            stored_predictions.pop()  # Remove the last element from the array
-            black_box_content = ' '.join(stored_predictions)
-        elif cv2.waitKey(1) & 0xFF == ord('w'):
-            stored_predictions.append(' ')  # Add an empty string to the array as a space
-            black_box_content = ' '.join(stored_predictions)  
+    if key == ord('q'):
+        stored_predictions.pop()  # Remove the last element from the array
+        black_box_content = ' '.join(stored_predictions)
+        # break  # Exit the loop if 'q' is pressed
+    elif key == ord('w'):
+        stored_predictions.append('_')  # Append '_' when 'w' is pressed
+        black_box_content = ' '.join(stored_predictions)
 
 cap.release()
 cv2.destroyAllWindows()
