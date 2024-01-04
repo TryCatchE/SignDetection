@@ -26,8 +26,8 @@ styleUtls = mp.solutions.drawing_styles
 
 handsObj = hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.3)
 
-labels_single_hand =  {i: letter for i, letter in enumerate(string.ascii_uppercase)}  # Adjust labels as needed
-labels_double_hands = {0: 'open text', 1: 'clear',2:'speak'}  # Adjust labels as needed
+labels_single_hand = {i: letter for i, letter in enumerate(string.ascii_uppercase)}  # Adjust labels as needed
+labels_double_hands = {0: 'open text', 1: 'clear', 2: 'speak'}  # Adjust labels as needed
 
 prev_label = None  # Variable to store the previous prediction label
 label_start_time = None  # Time when the current label was first detected
@@ -38,6 +38,46 @@ last_stored_prediction = None  # Variable to store the last stored prediction
 last_stored_time = None  # Time when the last prediction was stored
 store_interval = 5  # Interval in seconds to store new predictions
 
+# New variables for gesture tracking
+current_gesture = None
+gesture_start_time = None
+PREDICTION_INTERVAL = 1.5  # Time in seconds to wait before making a prediction
+
+import pickle
+import cv2
+import mediapipe as mp
+import numpy as np
+import pyttsx3
+import threading
+import string
+import time
+
+# Load the saved models
+model_single_hand_dir = pickle.load(open('./model.p', 'rb'))  # Adjust path as needed
+model_double_hands_dir = pickle.load(open('./model2.p', 'rb'))  # Adjust path as needed
+
+model_single_hand = model_single_hand_dir['model']
+model_double_hands = model_double_hands_dir['model']
+
+# Initialize Text-to-Speech engine
+engine = pyttsx3.init()
+engine_busy = False  # Flag to track if the engine is currently speaking
+
+cap = cv2.VideoCapture(0)
+
+hands = mp.solutions.hands
+drawUtls = mp.solutions.drawing_utils
+styleUtls = mp.solutions.drawing_styles
+
+handsObj = hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.3)
+
+labels_single_hand = {i: letter for i, letter in enumerate(string.ascii_uppercase)}  # Adjust labels as needed
+labels_double_hands = {0: 'open text', 1: 'clear', 2: 'speak'}  # Adjust labels as needed
+
+# New variables for gesture tracking
+current_gesture = None
+gesture_start_time = None
+PREDICTION_INTERVAL = 1.5  # Time in seconds to wait before making a prediction
 
 def speak_labels(labels):
     global engine_busy
@@ -65,6 +105,7 @@ def speak_labels(labels):
         for word in words:
             engine.say(word)
             engine.runAndWait()
+            print(word)
 
         engine_busy = False
 
@@ -127,14 +168,16 @@ while True:
         x1, y1 = int(min(xList) * W), int(min(yList) * H)
         x2, y2 = int(max(xList) * W), int(max(yList) * H)
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-        current_time = time.time()
-        if last_stored_time is None or (current_time - last_stored_time) >= store_interval:
-        # if predLabel != last_stored_prediction and (last_stored_time is None or (current_time - last_stored_time) >= store_interval):
-            if num_hands == 1 and display_black_box:
+        # Gesture duration checking
+        if predLabel != current_gesture:
+            current_gesture = predLabel
+            gesture_start_time = time.time()
+        elif time.time() - gesture_start_time >= PREDICTION_INTERVAL:
+            # Now act on the gesture after 1.5 seconds
+            if num_hands == 1 and predLabel != '_':
                 stored_predictions.append(predLabel)
-                last_stored_prediction = predLabel
-                last_stored_time = current_time
                 black_box_content = ' '.join(stored_predictions)
 
             if num_hands == 2:
@@ -142,30 +185,28 @@ while True:
                     display_black_box = True
                 elif int(prediction[0]) == 1:
                     display_black_box = False
-                    black_box_content=''
+                    black_box_content = ''
                     stored_predictions.clear()
-                elif int(prediction[0]) == 2:
-                    if black_box_content:
-                        # speak_content = ''.join(stored_predictions)
-                        print(stored_predictions)
-                        threading.Thread(target=speak_labels, args=(stored_predictions,)).start()
+                elif int(prediction[0]) == 2 and black_box_content:
+                    threading.Thread(target=speak_labels, args=(stored_predictions,)).start()
 
-        cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            # Reset the gesture and time
+            current_gesture = None
+            gesture_start_time = None
 
     # Display the black box with stored predictions
     if display_black_box:
-        cv2.rectangle(frame, (10, 10), (500, 100), (0, 0, 0), -1)  # Adjust size and position as needed
+        cv2.rectangle(frame, (10, 10), (500, 100), (0, 0, 0), -1)
         cv2.putText(frame, black_box_content, (15, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow('Hand Recognition', frame)
-    key = cv2.waitKey(1) & 0xFF  # Store the pressed key in a variable
+    key = cv2.waitKey(1) & 0xFF
 
     if key == ord('q'):
-        stored_predictions.pop()  # Remove the last element from the array
+        stored_predictions.pop()
         black_box_content = ' '.join(stored_predictions)
-        # break  # Exit the loop if 'q' is pressed
     elif key == ord('w'):
-        stored_predictions.append('_')  # Append '_' when 'w' is pressed
+        stored_predictions.append('_')
         black_box_content = ' '.join(stored_predictions)
 
 cap.release()
