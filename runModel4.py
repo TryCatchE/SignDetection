@@ -14,21 +14,6 @@ model_double_hands_dir = pickle.load(open('./model2.p', 'rb'))  # Adjust path as
 model_single_hand = model_single_hand_dir['model']
 model_double_hands = model_double_hands_dir['model']
 
-# Initialize Text-to-Speech engine
-engine = pyttsx3.init()
-engine_busy = False  # Flag to track if the engine is currently speaking
-
-cap = cv2.VideoCapture(0)
-
-hands = mp.solutions.hands
-drawUtls = mp.solutions.drawing_utils
-styleUtls = mp.solutions.drawing_styles
-
-handsObj = hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.3)
-
-labels_single_hand = {i: letter for i, letter in enumerate(string.ascii_uppercase)}  # Adjust labels as needed
-labels_double_hands = {0: 'open text', 1: 'clear', 2: 'speak'}  # Adjust labels as needed
-
 prev_label = None  # Variable to store the previous prediction label
 label_start_time = None  # Time when the current label was first detected
 stored_predictions = []  # Array to store predictions
@@ -37,27 +22,9 @@ black_box_content = ""  # Content to display in the black box
 last_stored_prediction = None  # Variable to store the last stored prediction
 last_stored_time = None  # Time when the last prediction was stored
 store_interval = 5  # Interval in seconds to store new predictions
-
-# New variables for gesture tracking
-current_gesture = None
+current_gesture = None# New variables for gesture tracking
 gesture_start_time = None
 PREDICTION_INTERVAL = 1.5  # Time in seconds to wait before making a prediction
-
-import pickle
-import cv2
-import mediapipe as mp
-import numpy as np
-import pyttsx3
-import threading
-import string
-import time
-
-# Load the saved models
-model_single_hand_dir = pickle.load(open('./model.p', 'rb'))  # Adjust path as needed
-model_double_hands_dir = pickle.load(open('./model2.p', 'rb'))  # Adjust path as needed
-
-model_single_hand = model_single_hand_dir['model']
-model_double_hands = model_double_hands_dir['model']
 
 # Initialize Text-to-Speech engine
 engine = pyttsx3.init()
@@ -74,10 +41,6 @@ handsObj = hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_c
 labels_single_hand = {i: letter for i, letter in enumerate(string.ascii_uppercase)}  # Adjust labels as needed
 labels_double_hands = {0: 'open text', 1: 'clear', 2: 'speak'}  # Adjust labels as needed
 
-# New variables for gesture tracking
-current_gesture = None
-gesture_start_time = None
-PREDICTION_INTERVAL = 1.5  # Time in seconds to wait before making a prediction
 
 def speak_labels(labels):
     global engine_busy
