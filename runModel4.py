@@ -38,6 +38,7 @@ last_stored_prediction = None  # Variable to store the last stored prediction
 last_stored_time = None  # Time when the last prediction was stored
 store_interval = 5  # Interval in seconds to store new predictions
 
+
 def speak_label(label):
     global engine_busy
     if not engine_busy:
@@ -124,6 +125,8 @@ while True:
                     stored_predictions.clear()
                 elif int(prediction[0]) == 2:
                     if black_box_content:
+                        # speak_content = ''.join(stored_predictions)
+                        print(black_box_content)
                         threading.Thread(target=speak_label, args=(black_box_content,)).start()
 
         cv2.putText(frame, predLabel, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
@@ -136,7 +139,12 @@ while True:
     cv2.imshow('Hand Recognition', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        if stored_predictions:  # Check if the array is not empty
+            stored_predictions.pop()  # Remove the last element from the array
+            black_box_content = ' '.join(stored_predictions)
+        elif cv2.waitKey(1) & 0xFF == ord('w'):
+            stored_predictions.append(' ')  # Add an empty string to the array as a space
+            black_box_content = ' '.join(stored_predictions)  
 
 cap.release()
 cv2.destroyAllWindows()
